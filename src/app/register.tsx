@@ -1,6 +1,7 @@
 import { Button } from "@/components/button";
 import { Input } from "@/components/input";
 import { api } from "@/server/api";
+import { useBadgeStore } from "@/store/badge-store";
 import { colors } from "@/styles/colors";
 import { FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 import axios from "axios";
@@ -11,6 +12,7 @@ import { Alert, Image, StatusBar, View } from "react-native";
 const EVENT_ID = "7a347ec5-3468-4bce-909f-7bdd5467e5a2";
 
 export default function Register() {
+  const badgeStore = useBadgeStore();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +30,12 @@ export default function Register() {
       });
 
       if (registerResponse.data.attendeeId) {
+        const badgeResponse = await api.get(
+          `/attendees/${registerResponse.data.attendeeId}/badge`,
+        );
+
+        badgeStore.save(badgeResponse.data.badge);
+
         Alert.alert("Inscrição", "Inscrição realizada com sucesso!", [
           {
             text: "OK",
@@ -37,7 +45,7 @@ export default function Register() {
       }
     } catch (error) {
       console.log(error);
-
+      setIsLoading(false);
       if (axios.isAxiosError(error)) {
         if (
           String(error.response?.data.message).includes("already registered")
@@ -47,8 +55,6 @@ export default function Register() {
       }
 
       Alert.alert("Inscrição", "Não foi possível fazer a inscrição.");
-    } finally {
-      setIsLoading(false);
     }
   }
 
